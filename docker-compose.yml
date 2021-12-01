@@ -1,0 +1,47 @@
+version: "3.8"
+
+networks:
+    laravel:
+        driver: bridge
+
+services:
+  php:
+    command: docker-php-entrypoint php-fpm
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    image: laravel-php
+    volumes:
+      - /app/vendor
+      - ./:/app
+    links:
+      - db
+    environment:
+      - RUN_MIGRATIONS=true
+    networks:
+      - laravel
+  api:
+    image: nginx:latest
+    ports:
+      - 3000:80
+    links:
+      - php
+    volumes:
+      - ./:/app
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel
+  db:
+    image: mysql:latest
+    restart: always
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_USER=laravel
+      - MYSQL_PASSWORD=development
+      - MYSQL_ROOT_PASSWORD=@p1ss1g2m
+    networks:
+      - laravel
